@@ -61,13 +61,14 @@ namespace SellerASINScraper
 
             Excel excel = new Excel();
             excel.CreateNewFile();
-            excel.CreateNewSheet();
+            //excel.CreateNewSheet();
            
 
             var cellCount = 1;
             var pageItemCount = 1;
             var totalItemCount = 1; //exists because pageItemCount will be reset every new page
             var pageNumber = 2;
+            var sellerName = driver.FindElement(By.XPath("//*[@id='search']/span[2]/h1/div/div[1]/div/div/a/span")).Text;
 
             while (IsElementPresent(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[7]/div/span/div/div/ul/li[" + pageNumber + "]"), driver) == true)
             { 
@@ -95,7 +96,7 @@ namespace SellerASINScraper
             }
 
 
-            excel.SaveAs(@"ASIN Report for " + sellerID);
+            excel.SaveAs(@"\\brmserver\company\eComm\SellerASINScraper\Reports\ASIN Report for " + sellerID + " - " + sellerName);
             excel.Quit();
             driver.Quit();
         }
