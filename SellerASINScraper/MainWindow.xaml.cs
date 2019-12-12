@@ -50,7 +50,7 @@ namespace SellerASINScraper
         {
 
             Close();
-            var driverService = ChromeDriverService.CreateDefaultService(@"\\brmpro\MACAPPS\ClickOnce\CustomerServiceAutomationTool");
+            var driverService = ChromeDriverService.CreateDefaultService(@"\\brmserver\company\eComm\SellerASINScraper");
             driverService.HideCommandPromptWindow = true;
             var driver = new ChromeDriver(driverService, new ChromeOptions());
             
@@ -66,35 +66,71 @@ namespace SellerASINScraper
 
             var cellCount = 1;
             var pageItemCount = 1;
-            var totalItemCount = 1; //exists because pageItemCount will be reset every new page
             var pageNumber = 2;
+            int countPageNumber = 0;
+            var checker = "";
             var sellerName = driver.FindElement(By.XPath("//*[@id='search']/span[2]/h1/div/div[1]/div/div/a/span")).Text;
 
-            while (IsElementPresent(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[7]/div/span/div/div/ul/li[" + pageNumber + "]"), driver) == true)
-            { 
+            while (IsElementPresent(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[8]/div/span/div/div/ul/li["+ pageNumber + "]/a"), driver) == true) //the page numbers at the bottom
+            {
+                //pageItemCount = 1;
 
-                while (IsElementPresent(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[3]/div[1]/div[" + pageItemCount + "]"), driver) == true)
-                {
-                    string result = driver.FindElement(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[3]/div[1]/div[" + pageItemCount + "]")).GetAttribute("data-asin");
+                while (IsElementPresent(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[4]/div[1]/div[" + pageItemCount + "]"), driver) == true) //the actual products
+                { 
+                    string result = driver.FindElement(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[4]/div[1]/div[" + pageItemCount + "]")).GetAttribute("data-asin");
                     excel.WriteToCell(cellCount, 1, result);
 
                     cellCount++;
-                    totalItemCount++;
-                    pageItemCount++;
+                    pageItemCount++; //maybe use this to tell program to stop. 16 Per full page. If less than 16 it doesn't need to run again. Downside is if the last page is 16 it won't shut off
+                }
+                pageItemCount = 1;
+                pageNumber++; 
+                if (pageNumber > 6) //all elements are set to 6 after page 5, so this is necessary to keep the program running till the last page.
+                {
+                    pageNumber--;
                 }
 
 
-                pageItemCount = 1;
-                pageNumber++;
+                
 
-                if (IsElementPresent(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[7]/div/span/div/div/ul/li[" + pageNumber + "]"), driver) == true)
+                if (IsElementPresent(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[8]/div/span/div/div/ul/li[" + pageNumber + "]/a"), driver) == true)
+                {
+                    checker = driver.FindElement(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[8]/div/span/div/div/ul/li[" + pageNumber + "]/a")).Text; //supposed to get the actual page number from within the element
+                }
+
+                int actualPageNumber = Convert.ToInt32(checker); //the only true count of what page you are on is collected by var checker. 
+
+                if (actualPageNumber == countPageNumber) //Ends the program after it's reached the last page. The only way to know it's scraped all the asins is if it repeats itself
+                {
+                    pageNumber = 999;
+                }
+                else
+                {
+                    countPageNumber = actualPageNumber;
+                }
+
+
+                if (IsElementPresent(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[8]/div/span/div/div/ul/li[" + pageNumber + "]/a"), driver) == true) //clicks on the next page if it exists
                     {
-                    var clickPG = driver.FindElement(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[7]/div/span/div/div/ul/li[" + pageNumber + "]"));
+                    var clickPG = driver.FindElement(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[8]/div/span/div/div/ul/li[" + pageNumber + "]/a"));
                     clickPG.Click();
                     }
 
             }
 
+            //if (IsElementPresent(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[8]/div/span/div/div/ul/li[" + pageNumber + "]/a"), driver) == false) //for sellers with only one page of our products
+            //{
+
+               // while (IsElementPresent(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[4]/div[1]/div[" + pageItemCount + "]"), driver) == true)
+               // {
+                   // string result = driver.FindElement(By.XPath("//*[@id='search']/div[1]/div[2]/div/span[3]/div[1]/div[" + pageItemCount + "]")).GetAttribute("data-asin");
+                   // excel.WriteToCell(cellCount, 1, result);
+
+                   // cellCount++;
+                    //pageItemCount++;
+               //}
+
+            //}
 
             excel.SaveAs(@"\\brmserver\company\eComm\SellerASINScraper\Reports\ASIN Report for " + sellerID + " - " + sellerName);
             excel.Quit();
